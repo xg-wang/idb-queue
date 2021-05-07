@@ -82,7 +82,7 @@ export default async function ({ watch }) {
         {
           file: 'dist/iife/index-min.js',
           format: 'iife',
-          name: 'idbKeyval',
+          name: 'idbTimeseries',
           esModule: false,
           plugins: [
             terser({
@@ -114,7 +114,7 @@ export default async function ({ watch }) {
         {
           file: 'dist/iife-compat/index-min.js',
           format: 'iife',
-          name: 'idbKeyval',
+          name: 'idbTimeseries',
           esModule: false,
           plugins: [
             getBabelPlugin(),

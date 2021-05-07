@@ -1,7 +1,7 @@
 {
-  "name": "idb-time-series",
+  "name": "idb-timeseries",
   "version": "0.1.0",
-  "description": "A super-simple-small time-series store built on top of IndexedDB",
+  "description": "A simple time-series store built on top of IndexedDB",
   "main": "./dist/cjs-compat/index.js",
   "module": "./dist/esm/index.js",
   "exports": {
