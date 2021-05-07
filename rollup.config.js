@@ -40,21 +40,6 @@ export default async function ({ watch }) {
       plugins: [
         simpleTS('test', { watch }),
         commonjs(),
-        // When testing IE10
-        // babel({
-        //   presets: babelPreset,
-        //   babelHelpers: 'runtime',
-        //   extensions: ['.js', '.jsx', '.es6', '.es', '.mjs', '.ts'],
-        //   plugins: [
-        //     [
-        //       '@babel/plugin-transform-runtime',
-        //       {
-        //         useESModules: true,
-        //       },
-        //     ],
-        //   ],
-        //   exclude: /node_modules/,
-        // }),
         resolve(),
         // Copy HTML file
         {

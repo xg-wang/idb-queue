@@ -13,6 +13,7 @@
     "./package.json": "./package.json"
   },
   "types": "./dist/esm/index.d.ts",
+  "files": ["dist"],
   "sideEffects": false,
   "scripts": {
     "build": "PRODUCTION=true rollup -c && node lib/size-report.mjs",
