@@ -1,0 +1,8 @@
+{
+  "extends": "../base-tsconfig.json",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "lib": ["esnext", "dom"]
+  },
+  "references": [{ "path": "../src" }]
+}
