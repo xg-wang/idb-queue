@@ -2,26 +2,27 @@ import {
   promisify,
   createStore,
   push,
+  peek,
   peekAll,
+  peekBack,
+  pop,
   shift,
   shiftAll,
-  UseStore,
+  WithStore,
 } from '../src';
 
 const { expect } = chai;
 
-const startTimestamp = Date.now();
-
 function generateData(num: number) {
   const res = [];
   for (let i = 0; i < num; i++) {
-    res.push({ timestamp: startTimestamp + i, value: i });
+    res.push({ key: i, value: i });
   }
   return res;
 }
 
-describe('Push', () => {
-  let testStore: UseStore;
+describe('push & peek', () => {
+  let testStore: WithStore;
   beforeEach(async () => {
     await promisify(indexedDB.deleteDatabase('test-store'));
     testStore = createStore('test-store', 'beacons');
@@ -64,10 +65,31 @@ describe('Push', () => {
     const all2 = await peekAll(testStore);
     expect(all2).deep.equal([data[0], data[1], data[3]], 'can push data again');
   });
+
+  it('peek retrieves values', async () => {
+    const retentionConfig = { maxNumber: 100, batchEvictionNumber: 10 };
+    const data = generateData(4);
+    for (const d of data) {
+      await push(d, retentionConfig, testStore);
+    }
+    expect(await peek(1, testStore)).deep.equal(
+      [data[0]],
+      'peek retrieves lowest',
+    );
+    expect(await peek(2, testStore)).deep.equal(
+      [data[0], data[1]],
+      'peek retrieves multiple',
+    );
+    expect(await peekAll(testStore)).deep.equal(data, 'peekAll retrieves all');
+    expect(await peekBack(1, testStore)).deep.equal(
+      [data[3]],
+      'peekBack retrieves highest',
+    );
+  });
 });
 
-describe('Shift', () => {
-  let testStore: UseStore;
+describe('shift & pop', () => {
+  let testStore: WithStore;
   beforeEach(async () => {
     await promisify(indexedDB.deleteDatabase('test-store'));
     testStore = createStore('test-store', 'beacons');
@@ -88,7 +110,7 @@ describe('Shift', () => {
     expect(left).deep.equal([]);
   });
 
-  it('shifts first data with shift', async () => {
+  it('shifts lowest data', async () => {
     const retentionConfig = { maxNumber: 100, batchEvictionNumber: 10 };
     const data = generateData(4);
     for (const d of data) {
@@ -104,5 +126,23 @@ describe('Shift', () => {
     expect(shifted2).deep.equal([data[1], data[2]]);
     const left2 = await peekAll(testStore);
     expect(left2).deep.equal(data.slice(3));
+  });
+
+  it('pops lowest data', async () => {
+    const retentionConfig = { maxNumber: 100, batchEvictionNumber: 10 };
+    const data = generateData(4);
+    for (const d of data) {
+      await push(d, retentionConfig, testStore);
+    }
+
+    const poped = await pop(1, testStore);
+    expect(poped).deep.equal([data[3]]);
+    const left = await peekAll(testStore);
+    expect(left).deep.equal(data.slice(0, 3));
+
+    const poped2 = await pop(2, testStore);
+    expect(poped2).deep.equal([data[2], data[1]]);
+    const left2 = await peekAll(testStore);
+    expect(left2).deep.equal(data.slice(0, 1));
   });
 });

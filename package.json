@@ -1,7 +1,7 @@
 {
-  "name": "idb-timeseries",
+  "name": "idb-queue",
   "version": "0.1.0",
-  "description": "A simple time-series store built on top of IndexedDB",
+  "description": "A simple priority queue built on top of IndexedDB",
   "main": "./dist/cjs-compat/index.js",
   "module": "./dist/esm/index.js",
   "exports": {
@@ -13,7 +13,9 @@
     "./package.json": "./package.json"
   },
   "types": "./dist/esm/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "PRODUCTION=true rollup -c && node lib/size-report.mjs",
@@ -23,22 +25,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/xg-wang/idb-timeseries.git"
+    "url": "git+https://github.com/xg-wang/idb-queue.git"
   },
   "keywords": [
     "idb",
     "indexeddb",
     "store",
-    "timeseries",
+    "queue",
+    "priorityqueue",
     "storage",
     "promise"
   ],
   "author": "Thomas Wang <hi@xgwang.me>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/xg-wang/idb-timeseries/issues"
+    "url": "https://github.com/xg-wang/idb-queue/issues"
   },
-  "homepage": "https://github.com/xg-wang/idb-timeseries",
+  "homepage": "https://github.com/xg-wang/idb-queue",
   "devDependencies": {
     "@babel/core": "^7.14.0",
     "@babel/plugin-external-helpers": "^7.12.13",

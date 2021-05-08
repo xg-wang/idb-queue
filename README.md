@@ -1,9 +1,9 @@
-# IDB-TimeSeries
+# idb-queue
 
 ## Installation
 
 ```sh
-npm install idb-timeseries
+npm install idb-queue
 ```
 
 ## Usage
@@ -15,17 +15,20 @@ import {
   promisify,
   createStore,
   push,
+  peek,
   peekAll,
+  peekBack,
+  pop,
   shift,
   shiftAll,
-  UseStore,
-} from 'idb-timeseries';
+  WithStore,
+} from 'idb-queue';
 
 const retentionConfig = { maxNumber: 100, batchEvictionNumber: 10 };
 const data = { timestamp: Date.now(), value: {} };
 
 await push(data, retentionConfig);
-const shifted = await shift(1);
+const shifted = await shift();
 ```
 
 ## Credit
