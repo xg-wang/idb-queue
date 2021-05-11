@@ -34,7 +34,9 @@
     "queue",
     "priorityqueue",
     "storage",
-    "promise"
+    "promise",
+    "front-end",
+    "web"
   ],
   "author": "Thomas Wang <hi@xgwang.me>",
   "license": "Apache-2.0",
