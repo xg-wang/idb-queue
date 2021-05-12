@@ -1,5 +1,8 @@
 # idb-queue
 
+[![npm version](https://badge.fury.io/js/idb-queue.svg)](https://badge.fury.io/js/idb-queue)
+[![CI](https://github.com/xg-wang/idb-queue/actions/workflows/ci.yml/badge.svg)](https://github.com/xg-wang/idb-queue/actions/workflows/ci.yml)
+
 ## Installation
 
 ```sh
