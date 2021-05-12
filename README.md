@@ -14,6 +14,7 @@ WIP
 import {
   promisify,
   createStore,
+  clear,
   push,
   peek,
   peekAll,
@@ -35,6 +36,7 @@ const data = { '<key-can-be-sorted>': 1, value: {} };
 
 await push(data, retentionConfig, withStore);
 const shifted = await shift(1, withStore);
+await clear(withStore);
 ```
 
 ## Credit
