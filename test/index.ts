@@ -1,6 +1,7 @@
 import {
   promisify,
   createStore,
+  clear,
   push,
   peek,
   peekAll,
@@ -84,6 +85,20 @@ describe('push & peek', () => {
     expect(await peekBack(1, testStore)).deep.equal(
       [data[3]],
       'peekBack retrieves highest',
+    );
+  });
+
+  it('clear() clears the object store', async () => {
+    const retentionConfig = { maxNumber: 100, batchEvictionNumber: 10 };
+    const data = generateData(4);
+    for (const d of data) {
+      await push(d, retentionConfig, testStore);
+    }
+    expect(await peekAll(testStore)).deep.equal(data, 'peekAll retrieves all');
+    await clear(testStore);
+    expect(await peekAll(testStore)).deep.equal(
+      [],
+      'peekAll retrieves none after clear',
     );
   });
 });

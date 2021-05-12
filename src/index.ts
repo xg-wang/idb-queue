@@ -157,3 +157,10 @@ export function peekBack<T>(count = 1, withStore = defaultStore()) {
 export function pop<T>(count = 1, withStore = defaultStore()) {
   return _shift<T>(count, withStore, 'prev');
 }
+
+export function clear(withStore = defaultStore()) {
+  return withStore('readwrite', (store) => {
+    store.clear();
+    return promisify(store.transaction);
+  });
+}
