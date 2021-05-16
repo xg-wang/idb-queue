@@ -67,31 +67,47 @@ export function push<T>(
   return withStore('readwrite', (store) => {
     store.put(value);
     return promisify(store.transaction);
-  }).then(() =>
-    withStore('readonly', (store) => promisify(store.count())).then((count) => {
-      // Delete old entries based on batchEvictionNumber when exceeding maxNumber
-      if (count <= retentionConfig.maxNumber) {
-        return;
-      }
-      return withStore('readonly', (store) => {
-        let total = 0;
-        let lowestKey: number = 0;
-        store.openKeyCursor().onsuccess = function () {
-          const cursor = this.result;
-          if (cursor && total++ < retentionConfig.batchEvictionNumber) {
-            lowestKey = cursor.key as number;
-            cursor.continue();
+  }).then(
+    () =>
+      withStore('readonly', (store) => promisify(store.count())).then(
+        (count) => {
+          // Delete old entries based on batchEvictionNumber when exceeding maxNumber
+          if (count <= retentionConfig.maxNumber) {
+            return;
           }
-        };
-        return promisify(store.transaction).then(() => {
-          return withStore('readwrite', (store) => {
-            store.delete(IDBKeyRange.upperBound(lowestKey));
-            return promisify(store.transaction);
-          });
-        });
-      });
-    }),
+          return batchEvict(retentionConfig, withStore);
+        },
+      ),
+    (reason) => {
+      if (reason && reason.name === 'QuotaExceededError') {
+        return batchEvict(retentionConfig, withStore);
+      }
+    },
   );
+}
+
+export function batchEvict(
+  retentionConfig = defaultRetention(),
+  withStore = defaultStore(),
+) {
+  return withStore('readonly', (store) => {
+    let total = 0;
+    let lowestKey: number | null = null;
+    store.openKeyCursor().onsuccess = function () {
+      const cursor = this.result;
+      if (cursor && total++ < retentionConfig.batchEvictionNumber) {
+        lowestKey = cursor.key as number;
+        cursor.continue();
+      }
+    };
+    return promisify(store.transaction).then(() => {
+      if (lowestKey == null) return Promise.resolve();
+      return withStore('readwrite', (store) => {
+        store.delete(IDBKeyRange.upperBound(lowestKey));
+        return promisify(store.transaction);
+      });
+    });
+  });
 }
 
 function _peek<T>(
