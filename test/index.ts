@@ -1,4 +1,5 @@
 import {
+  batchEvict,
   promisify,
   createStore,
   clear,
@@ -101,6 +102,18 @@ describe('push & peek', () => {
       'peekAll retrieves none after clear',
     );
   });
+
+  it('batchEvict evicts data', async () => {
+    const retentionConfig = { maxNumber: 10, batchEvictionNumber: 2 };
+    const data = generateData(4);
+    for (const d of data) {
+      await push(d, retentionConfig, testStore);
+    }
+    const all = await peekAll(testStore);
+    expect(all).deep.equal(data);
+    await batchEvict(retentionConfig, testStore);
+    expect(await peekAll(testStore)).deep.equal([data[2], data[3]]);
+  });
 });
 
 describe('shift & pop', () => {
@@ -143,7 +156,7 @@ describe('shift & pop', () => {
     expect(left2).deep.equal(data.slice(3));
   });
 
-  it('pops lowest data', async () => {
+  it('pops highest data', async () => {
     const retentionConfig = { maxNumber: 100, batchEvictionNumber: 10 };
     const data = generateData(4);
     for (const d of data) {
