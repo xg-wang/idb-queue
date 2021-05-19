@@ -59,74 +59,71 @@ function defaultRetention(): RetentionConfig {
   };
 }
 
-export function push<T>(
-  value: T,
+function _batchEvictFromStoreTx(
+  store: IDBObjectStore,
   retentionConfig = defaultRetention(),
-  withStore = defaultStore(),
-) {
-  return withStore('readwrite', (store) => {
-    store.put(value);
-    return promisify(store.transaction);
-  }).then(
-    () =>
-      withStore('readonly', (store) => promisify(store.count())).then(
-        (count) => {
-          // Delete old entries based on batchEvictionNumber when exceeding maxNumber
-          if (count <= retentionConfig.maxNumber) {
-            return;
-          }
-          return batchEvict(retentionConfig, withStore);
-        },
-      ),
-    (reason) => {
-      if (reason && reason.name === 'QuotaExceededError') {
-        return batchEvict(retentionConfig, withStore);
-      }
-    },
-  );
+): Promise<void> {
+  let total = 0;
+  let lowestKey: number | null = null;
+  store.openKeyCursor().onsuccess = function () {
+    const cursor = this.result;
+    if (cursor && total++ < retentionConfig.batchEvictionNumber) {
+      lowestKey = cursor.key as number;
+      cursor.continue();
+    } else if (lowestKey != null) {
+      store.delete(IDBKeyRange.upperBound(lowestKey));
+    }
+  };
+  return promisify(store.transaction);
 }
 
 export function batchEvict(
   retentionConfig = defaultRetention(),
   withStore = defaultStore(),
 ) {
-  return withStore('readonly', (store) => {
-    let total = 0;
-    let lowestKey: number | null = null;
-    store.openKeyCursor().onsuccess = function () {
-      const cursor = this.result;
-      if (cursor && total++ < retentionConfig.batchEvictionNumber) {
-        lowestKey = cursor.key as number;
-        cursor.continue();
+  return withStore('readwrite', (store) =>
+    _batchEvictFromStoreTx(store, retentionConfig),
+  );
+}
+
+let isClearing = false;
+
+export function push<T>(
+  value: T,
+  retentionConfig = defaultRetention(),
+  withStore = defaultStore(),
+): Promise<void> {
+  return withStore('readwrite', (store) => {
+    store.put(value);
+    return promisify(store.count()).then((count) => {
+      // Delete old entries based on batchEvictionNumber when exceeding maxNumber
+      if (count <= retentionConfig.maxNumber) {
+        return;
       }
-    };
-    return promisify(store.transaction).then(() => {
-      if (lowestKey == null) return Promise.resolve();
-      return withStore('readwrite', (store) => {
-        store.delete(IDBKeyRange.upperBound(lowestKey));
-        return promisify(store.transaction);
-      });
+      return _batchEvictFromStoreTx(store, retentionConfig);
     });
+  }).catch((reason) => {
+    if (reason && reason.name === 'QuotaExceededError') {
+      return batchEvict(retentionConfig, withStore);
+    }
   });
 }
 
-function _peek<T>(
-  count: number,
-  withStore: WithStore,
-  direction: IDBCursorDirection,
-) {
-  return withStore('readonly', (store) => {
-    let peeked: Array<T> = [];
-    store.openCursor(null, direction).onsuccess = function () {
-      const cursor = this.result;
-      if (cursor) {
-        peeked.push(cursor.value);
-        if (count < 0 || peeked.length < count) {
-          cursor.continue();
-        }
-      }
-    };
-    return promisify(store.transaction).then(() => peeked);
+export function pushIfNotClearing<T>(
+  value: T,
+  retentionConfig = defaultRetention(),
+  withStore = defaultStore(),
+): Promise<void> {
+  return isClearing
+    ? Promise.resolve()
+    : push(value, retentionConfig, withStore);
+}
+
+export function clear(withStore = defaultStore()) {
+  isClearing = true;
+  return withStore('readwrite', (store) => {
+    store.clear();
+    return promisify(store.transaction).finally(() => (isClearing = false));
   });
 }
 
@@ -151,6 +148,26 @@ export function _shift<T>(
   });
 }
 
+function _peek<T>(
+  count: number,
+  withStore: WithStore,
+  direction: IDBCursorDirection,
+) {
+  return withStore('readonly', (store) => {
+    let peeked: Array<T> = [];
+    store.openCursor(null, direction).onsuccess = function () {
+      const cursor = this.result;
+      if (cursor) {
+        peeked.push(cursor.value);
+        if (count < 0 || peeked.length < count) {
+          cursor.continue();
+        }
+      }
+    };
+    return promisify(store.transaction).then(() => peeked);
+  });
+}
+
 export function peek<T>(count = 1, withStore = defaultStore()) {
   return _peek<T>(count, withStore, 'next');
 }
@@ -172,11 +189,4 @@ export function peekBack<T>(count = 1, withStore = defaultStore()) {
 
 export function pop<T>(count = 1, withStore = defaultStore()) {
   return _shift<T>(count, withStore, 'prev');
-}
-
-export function clear(withStore = defaultStore()) {
-  return withStore('readwrite', (store) => {
-    store.clear();
-    return promisify(store.transaction);
-  });
 }

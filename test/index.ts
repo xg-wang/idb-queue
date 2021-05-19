@@ -4,6 +4,7 @@ import {
   createStore,
   clear,
   push,
+  pushIfNotClearing,
   peek,
   peekAll,
   peekBack,
@@ -88,6 +89,17 @@ describe('push & peek', () => {
       'peekBack retrieves highest',
     );
   });
+});
+
+describe('push & clear', () => {
+  let testStore: WithStore;
+  beforeEach(async () => {
+    await promisify(indexedDB.deleteDatabase('test-store'));
+    testStore = createStore('test-store', 'beacons');
+  });
+  afterEach(async () => {
+    await promisify(indexedDB.deleteDatabase('test-store'));
+  });
 
   it('clear() clears the object store', async () => {
     const retentionConfig = { maxNumber: 100, batchEvictionNumber: 10 };
@@ -113,6 +125,58 @@ describe('push & peek', () => {
     expect(all).deep.equal(data);
     await batchEvict(retentionConfig, testStore);
     expect(await peekAll(testStore)).deep.equal([data[2], data[3]]);
+  });
+
+  it('push during clear can add data to the cleared store', async () => {
+    const retentionConfig = { maxNumber: 10, batchEvictionNumber: 2 };
+    const data = generateData(4);
+    await push(data[0], retentionConfig, testStore);
+    await push(data[1], retentionConfig, testStore);
+    await clear(testStore);
+    await push(data[2], retentionConfig, testStore);
+    await push(data[3], retentionConfig, testStore);
+    const all = await peekAll(testStore);
+    expect(all).deep.equal([data[2], data[3]]);
+  });
+
+  it('push during clear can add data to the cleared store, sync', async () => {
+    const retentionConfig = { maxNumber: 10, batchEvictionNumber: 2 };
+    const data = generateData(4);
+    await Promise.all([
+      push(data[0], retentionConfig, testStore),
+      push(data[1], retentionConfig, testStore),
+      clear(testStore),
+      push(data[2], retentionConfig, testStore),
+      push(data[3], retentionConfig, testStore),
+    ]);
+    const all = await peekAll(testStore);
+    expect(all).deep.equal([data[2], data[3]]);
+  });
+
+  it('pushIfNotClearing during clear does not add data to the cleared store if doing async properly', async () => {
+    const retentionConfig = { maxNumber: 10, batchEvictionNumber: 2 };
+    const data = generateData(4);
+    await pushIfNotClearing(data[0], retentionConfig, testStore);
+    await pushIfNotClearing(data[1], retentionConfig, testStore);
+    await clear(testStore);
+    await pushIfNotClearing(data[2], retentionConfig, testStore);
+    await pushIfNotClearing(data[3], retentionConfig, testStore);
+    const all = await peekAll(testStore);
+    expect(all).deep.equal([data[2], data[3]]);
+  });
+
+  it.only('pushIfNotClearing during clear does not add data to the cleared store if called synchronously', async () => {
+    const retentionConfig = { maxNumber: 10, batchEvictionNumber: 2 };
+    const data = generateData(4);
+    await Promise.all([
+      pushIfNotClearing(data[0], retentionConfig, testStore),
+      pushIfNotClearing(data[1], retentionConfig, testStore),
+      clear(testStore),
+      pushIfNotClearing(data[2], retentionConfig, testStore),
+      pushIfNotClearing(data[3], retentionConfig, testStore),
+    ]);
+    const all = await peekAll(testStore);
+    expect(all).deep.equal([]);
   });
 });
 
