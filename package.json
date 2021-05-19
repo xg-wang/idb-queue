@@ -1,6 +1,6 @@
 {
   "name": "idb-queue",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A simple priority queue built on top of IndexedDB",
   "main": "./dist/cjs-compat/index.js",
   "module": "./dist/esm/index.js",
