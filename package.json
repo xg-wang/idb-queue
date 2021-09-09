@@ -57,7 +57,7 @@
     "@types/mocha": "^9.0.0",
     "chai": "^4.3.4",
     "del": "^6.0.0",
-    "filesize": "^6.3.0",
+    "filesize": "^8.0.0",
     "glob": "^7.1.7",
     "husky": "^6.0.0",
     "lint-staged": "^11.0.0",
