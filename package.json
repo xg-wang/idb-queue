@@ -74,6 +74,7 @@
     "*.{js,css,md,ts,html}": "prettier --write"
   },
   "volta": {
-    "node": "16.1.0"
+    "node": "16.1.0",
+    "yarn": "1.22.17"
   }
 }
