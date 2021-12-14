@@ -24,6 +24,29 @@ function generateData(num: number) {
   return res;
 }
 
+describe('createStore', () => {
+  it('can create database', async () => {
+    const store = createStore('test-store', 'beacons');
+    const databases = await store('readonly', () => indexedDB.databases());
+    expect(databases.map((db) => db.name)).deep.equal(['test-store']);
+    await promisify(indexedDB.deleteDatabase('test-store'));
+  });
+
+  it('can invoke onSuccess handler', async () => {
+    let onSuccessCalled = false;
+    let onErrorCalled = false;
+    const store = createStore('test-store', 'beacons', 'key', {
+      onSuccess: () => (onSuccessCalled = true),
+      onError: () => (onErrorCalled = true),
+    });
+    const databases = await store('readonly', () => indexedDB.databases());
+    expect(databases.map((db) => db.name)).deep.equal(['test-store']);
+    expect(onSuccessCalled).be.true;
+    expect(onErrorCalled).be.false;
+    await promisify(indexedDB.deleteDatabase('test-store'));
+  });
+});
+
 describe('push & peek', () => {
   let testStore: WithStore;
   beforeEach(async () => {
@@ -165,7 +188,7 @@ describe('push & clear', () => {
     expect(all).deep.equal([data[2], data[3]]);
   });
 
-  it.only('pushIfNotClearing during clear does not add data to the cleared store if called synchronously', async () => {
+  it('pushIfNotClearing during clear does not add data to the cleared store if called synchronously', async () => {
     const retentionConfig = { maxNumber: 10, batchEvictionNumber: 2 };
     const data = generateData(4);
     await Promise.all([

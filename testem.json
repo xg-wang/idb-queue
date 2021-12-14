@@ -1,0 +1,23 @@
+{
+  "framework": "mocha",
+  "test_page": "./dist/test/index.html",
+  "launch_in_ci": ["Chrome"],
+  "launch_in_dev": ["Chrome"],
+  "browser_args": {
+    "Chrome": {
+      "ci": [
+        "--headless",
+        "--user-data-dir=/tmp",
+        "--disable-gpu",
+        "--disable-dev-shm-usage",
+        "--disable-software-rasterizer",
+        "--mute-audio",
+        "--remote-debugging-port=9222",
+        "--window-size=1440,900",
+        "--enable-logging",
+        "--no-sandbox",
+        "--crash-dumps-dir=/tmp/chrome_crash_dumps"
+      ]
+    }
+  }
+}

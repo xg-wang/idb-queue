@@ -13,20 +13,32 @@ export function createStore(
   dbName: string,
   storeName: string,
   key = 'key',
+  options?: {
+    onSuccess: () => void;
+    onError: (e: unknown) => void;
+  },
 ): WithStore {
   const request = indexedDB.open(dbName);
   request.onupgradeneeded = () => {
-    request.result.createObjectStore(storeName, {
-      keyPath: key,
-    });
+    try {
+      request.result.createObjectStore(storeName, {
+        keyPath: key,
+      });
+    } catch (error) {
+      options?.onError(error);
+    }
   };
   const p = new Promise<IDBDatabase>((resolve, reject) => {
     request.onsuccess = () => {
       const db = request.result;
       db.onversionchange = () => db.close();
       resolve(db);
+      options?.onSuccess();
     };
-    request.onerror = () => reject(request.error);
+    request.onerror = () => {
+      reject(request.error);
+      options?.onError(request.error);
+    };
   });
 
   return (txMode, callback) =>
